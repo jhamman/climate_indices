@@ -2361,8 +2361,9 @@ def pdsi(
 
         # if we have input time series (precipitation and PET) with an incomplete
         # final year then we pad all the time series arrays with NaN values
-        pad_months = 12 - (precip_time_series.size % 12)
-        if pad_months > 0:
+        pad_months = precip_time_series.size % 12
+        if pad_months:
+            pad_months = 12 - pad_months
 
             # pad arrays with empty/fill months at end of final year
             arrays_to_pad = [

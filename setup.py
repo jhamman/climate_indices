@@ -27,7 +27,7 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "dask",
-        "nco",
+        # "nco",
         "netcdf4",
         "numba",
         "numpy",

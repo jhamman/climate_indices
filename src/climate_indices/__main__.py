@@ -6,7 +6,10 @@ import logging
 import multiprocessing
 import os
 
-from nco import Nco
+try:  # jjh - hopefully, we dont need this
+    from nco import Nco
+except:
+    nco = None
 import numpy as np
 import scipy.constants
 import xarray as xr
