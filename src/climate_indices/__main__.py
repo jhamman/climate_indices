@@ -1185,7 +1185,10 @@ def _parallel_process(index: str,
     # find the start index of each sub-array we'll split out per worker process,
     # assuming the shape of the output array is the same as all input arrays
     shape = arrays_dict[output_var_name][_KEY_SHAPE]
-    d, m = divmod(shape[0], _NUMBER_OF_WORKER_PROCESSES)
+    # if there are less chunks than the available number of processes, only create the
+    # necessary number of tasks
+    required_processes = min(shape[0], _NUMBER_OF_WORKER_PROCESSES)
+    d, m = divmod(shape[0], required_processes)
     split_indices = list(range(0, ((d + 1) * (m + 1)), (d + 1)))
     if d != 0:
         split_indices += list(range(split_indices[-1] + d, shape[0], d))
@@ -1201,7 +1204,7 @@ def _parallel_process(index: str,
 
         # we have a single input array, create parameter dictionary objects
         # appropriate to the _apply_along_axis function, one per worker process
-        for i in range(_NUMBER_OF_WORKER_PROCESSES):
+        for i in range(required_processes):
             params = {
                 "index": index,
                 "func1d": func1d,
@@ -1211,7 +1214,7 @@ def _parallel_process(index: str,
                 "input_type": input_type,
                 "args": args,
             }
-            if i < (_NUMBER_OF_WORKER_PROCESSES - 1):
+            if i < (required_processes - 1):
                 params["sub_array_end"] = split_indices[i + 1]
             else:
                 params["sub_array_end"] = None
@@ -1222,7 +1225,7 @@ def _parallel_process(index: str,
 
         # we have two input arrays, create parameter dictionary objects
         # appropriate to the _apply_along_axis_double function, one per worker process
-        for i in range(_NUMBER_OF_WORKER_PROCESSES):
+        for i in range(required_processes):
             params = {
                 "index": index,
                 "func1d": _spei,
@@ -1233,7 +1236,7 @@ def _parallel_process(index: str,
                 "input_type": input_type,
                 "args": args,
             }
-            if i < (_NUMBER_OF_WORKER_PROCESSES - 1):
+            if i < (required_processes - 1):
                 params["sub_array_end"] = split_indices[i + 1]
             else:
                 params["sub_array_end"] = None
@@ -1244,7 +1247,7 @@ def _parallel_process(index: str,
 
         # we have two input arrays, create parameter dictionary objects
         # appropriate to the _apply_along_axis_double function, one per worker process
-        for i in range(_NUMBER_OF_WORKER_PROCESSES):
+        for i in range(required_processes):
             params = {
                 "index": index,
                 "func1d": _pet,
@@ -1255,7 +1258,7 @@ def _parallel_process(index: str,
                 "input_type": input_type,
                 "args": args,
             }
-            if i < (_NUMBER_OF_WORKER_PROCESSES - 1):
+            if i < (required_processes - 1):
                 params["sub_array_end"] = split_indices[i + 1]
             else:
                 params["sub_array_end"] = None
@@ -1266,7 +1269,7 @@ def _parallel_process(index: str,
 
         # create parameter dictionary objects appropriate to
         # the _apply_along_axis_palmer function, one per worker process
-        for i in range(_NUMBER_OF_WORKER_PROCESSES):
+        for i in range(required_processes):
             params = {
                 "index": index,
                 "func1d": _palmers,
@@ -1278,7 +1281,7 @@ def _parallel_process(index: str,
                 "input_type": input_type,
                 "args": args,
             }
-            if i < (_NUMBER_OF_WORKER_PROCESSES - 1):
+            if i < (required_processes - 1):
                 params["sub_array_end"] = split_indices[i + 1]
             else:
                 params["sub_array_end"] = None
@@ -1653,6 +1656,7 @@ def main():  # type: () -> None
         # validate the arguments and determine the input type
         input_type = _validate_args(arguments)
 
+        global _NUMBER_OF_WORKER_PROCESSES
         if arguments.multiprocessing == "single":
             _NUMBER_OF_WORKER_PROCESSES = 1
         elif arguments.multiprocessing == "all":
